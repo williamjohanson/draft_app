@@ -1,0 +1,38 @@
+.dynasty-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  background-color: #f9f9f9;
+}
+
+.dynasty-container h2 {
+  font-size: 2.5rem;
+  color: #444;
+  margin-bottom: 30px;
+}
+
+.teams-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 20px;
+  width: 100%;
+  max-width: 800px;
+}
+
+.team-button {
+  background-color: #007bff;
+  color: white;
+  padding: 15px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  text-align: center;
+  font-size: 1rem;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.team-button:hover {
+  background-color: #0056b3;
+  transform: translateY(-3px);
+}

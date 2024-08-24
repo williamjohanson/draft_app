@@ -1,0 +1,79 @@
+.team-detail-container {
+    padding: 20px;
+    background-color: #f4f4f4;
+    max-width: 1000px;
+    margin: 20px auto;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.team-detail-container h2 {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.roster, .draft-picks, .transactions {
+    margin-top: 20px;
+    padding: 10px;
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.05);
+}
+
+.roster h3, .draft-picks h3, .transactions h3 {
+    font-size: 1.8rem;
+    color: #555;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #ddd;
+    padding-bottom: 10px;
+}
+
+.roster ul, .draft-picks ul, .transactions ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.roster li, .draft-picks li, .transactions li {
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    background-color: #e9ecef;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.roster li button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.roster li button:hover {
+    background-color: #0056b3;
+}
+
+.player-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+    border: 2px solid #007bff;
+}
+
+.transactions li {
+    font-size: 1rem;
+    background-color: #fff3cd;
+    border-left: 5px solid #ffc107;
+}
+
+.transactions li:hover {
+    background-color: #ffeeba;
+}

@@ -1,0 +1,62 @@
+/* src/styles/PlayerDetail.css */
+
+.player-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 20px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;  /* Ensure the modal doesn't exceed the viewport height */
+    overflow-y: auto;  /* Add scrolling if the content overflows */
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+    z-index: 1000;  /* Ensure it appears on top */
+}
+
+.player-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.75);
+    z-index: 999;  /* Ensure it appears behind the modal but on top of other content */
+}
+
+.modal-content img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 50%;
+    margin-bottom: 15px;
+}
+
+.modal-content h2 {
+    font-size: 24px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.modal-content p {
+    margin: 5px 0;
+    text-align: center;
+}
+
+.modal-close-button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    background-color: #ff4b5c;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.modal-close-button:hover {
+    background-color: #d93a4a;
+}

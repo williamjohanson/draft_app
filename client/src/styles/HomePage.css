@@ -1,0 +1,56 @@
+.home-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #f0f2f5;
+  text-align: center;
+}
+
+.home-container h1 {
+  font-size: 3rem;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.home-container p {
+  font-size: 1.2rem;
+  color: #666;
+  margin-bottom: 40px;
+}
+
+.button-container {
+  display: flex;
+  gap: 20px;
+}
+
+.league-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 15px 30px;
+  font-size: 1.2rem;
+  color: white;
+  background-color: #007bff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  text-decoration: none;
+}
+
+.league-button img {
+  width: 40px;
+  height: 40px;
+  margin-right: 10px;
+}
+
+.league-button:hover {
+  background-color: #0056b3;
+}
+
+.league-logo {
+  max-height: 40px;
+  max-width: 40px;
+}
