@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import PlayerPopup from './PlayerPopup';  // Ensure you have this component
+import PlayerPopup from './PlayerPopup';  
 import '../styles/TeamDetail.css';
 
 const TeamDetail = () => {
@@ -14,6 +14,7 @@ const TeamDetail = () => {
     const [playerGrade, setPlayerGrade] = useState('');
     const [teamGrade, setTeamGrade] = useState('');
     const [loadingReview, setLoadingReview] = useState(false);
+    const [loadingGrades, setLoadingGrades] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
@@ -26,7 +27,7 @@ const TeamDetail = () => {
                 }
                 setTeamData(team);
                 groupPlayersByPosition(team.player_details);
-                calculatePlayerGrades(team.player_details);
+                await calculatePlayerGrades(team.player_details);
             } catch (error) {
                 console.error('Error fetching team data:', error);
                 setError('Failed to load team data. Please try again later.');
@@ -48,26 +49,25 @@ const TeamDetail = () => {
 
     const calculatePlayerGrades = async (players) => {
         try {
-            const gradePromises = players.map(player =>
-                axios.post('/api/player-grade', {
-                    player_name: player.first_name + ' ' + player.last_name,
-                    player_position: player.position,
-                    team_roster: players
-                })
-            );
+            const response = await axios.post('/api/player-grades', {
+                team_roster: players
+            });
 
-            const grades = await Promise.all(gradePromises);
+            const grades = response.data.grades;
 
             // Map grades to players
-            players.forEach((player, index) => {
-                player.grade = grades[index].data.grade;
+            players.forEach(player => {
+                const playerGrade = grades.find(g => g.player_id === player.player_id);
+                player.grade = playerGrade ? playerGrade.grade : 'N/A';
             });
 
             // Calculate team grade (simple average for demonstration)
-            const teamGrade = grades.reduce((sum, grade) => sum + parseFloat(grade.data.grade), 0) / grades.length;
+            const teamGrade = grades.reduce((sum, grade) => sum + parseFloat(grade.grade), 0) / grades.length;
             setTeamGrade(teamGrade.toFixed(2));
+            setLoadingGrades(false);
         } catch (error) {
             console.error('Error calculating player grades:', error);
+            setLoadingGrades(false);
         }
     };
 
@@ -107,7 +107,7 @@ const TeamDetail = () => {
     };
 
     if (error) return <div>{error}</div>;
-    if (!teamData) return <div>Loading...</div>;
+    if (!teamData || loadingGrades) return <div>Loading...</div>;
 
     return (
         <div className="team-container">
