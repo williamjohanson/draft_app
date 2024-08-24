@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import Modal from 'react-modal';
-import '../styles/PlayerDetail.css';  // Use the correct path to your CSS file
+import PlayerPopup from './PlayerPopup';  // Ensure you have this component
+import '../styles/TeamDetail.css';
 
 const TeamDetail = () => {
     const { teamId } = useParams();
     const [teamData, setTeamData] = useState(null);
-    const [transactions, setTransactions] = useState([]);
+    const [groupedPlayers, setGroupedPlayers] = useState({});
     const [selectedPlayer, setSelectedPlayer] = useState(null);
     const [modalIsOpen, setModalIsOpen] = useState(false);
     const [playerReview, setPlayerReview] = useState('');
+    const [playerGrade, setPlayerGrade] = useState('');
+    const [teamGrade, setTeamGrade] = useState('');
     const [loadingReview, setLoadingReview] = useState(false);
     const [error, setError] = useState(null);
 
@@ -18,28 +20,15 @@ const TeamDetail = () => {
         async function fetchTeamData() {
             try {
                 const rostersResponse = await axios.get(`/api/league/1048178119665889280/rosters`);
-                const usersResponse = await axios.get(`/api/league/1048178119665889280/users`);
                 const team = rostersResponse.data.find(t => t.owner_id.toString() === teamId);
-
                 if (!team) {
                     throw new Error('Team not found in roster data.');
                 }
-
-                const owner = usersResponse.data.find(u => u.user_id.toString() === team.owner_id.toString());
-                const teamName = owner?.metadata?.team_name || 'Unknown Team';
-                const ownerName = owner?.display_name || `Unknown Owner (ID: ${team.owner_id})`;
-
-                setTeamData({
-                    ...team,
-                    team_name: teamName,
-                    owner_name: ownerName,
-                });
-
-                const transactionsResponse = await axios.get(`/api/league/1048178119665889280/transactions`);
-                const teamTransactions = transactionsResponse.data.filter(tx => tx.roster_ids.includes(parseInt(teamId)));
-                setTransactions(teamTransactions);
-
+                setTeamData(team);
+                groupPlayersByPosition(team.player_details);
+                calculatePlayerGrades(team.player_details);
             } catch (error) {
+                console.error('Error fetching team data:', error);
                 setError('Failed to load team data. Please try again later.');
             }
         }
@@ -47,87 +36,108 @@ const TeamDetail = () => {
         fetchTeamData();
     }, [teamId]);
 
+    const groupPlayersByPosition = (players) => {
+        const positions = { QB: [], RB: [], WR: [], TE: [] };
+        players.forEach(player => {
+            if (positions[player.position]) {
+                positions[player.position].push(player);
+            }
+        });
+        setGroupedPlayers(positions);
+    };
+
+    const calculatePlayerGrades = async (players) => {
+        try {
+            const gradePromises = players.map(player =>
+                axios.post('/api/player-grade', {
+                    player_name: player.first_name + ' ' + player.last_name,
+                    player_position: player.position,
+                    team_roster: players
+                })
+            );
+
+            const grades = await Promise.all(gradePromises);
+
+            // Map grades to players
+            players.forEach((player, index) => {
+                player.grade = grades[index].data.grade;
+            });
+
+            // Calculate team grade (simple average for demonstration)
+            const teamGrade = grades.reduce((sum, grade) => sum + parseFloat(grade.data.grade), 0) / grades.length;
+            setTeamGrade(teamGrade.toFixed(2));
+        } catch (error) {
+            console.error('Error calculating player grades:', error);
+        }
+    };
+
     const openModal = async (player) => {
         setSelectedPlayer(player);
         setModalIsOpen(true);
 
-        // Fetch humorous review
-        setLoadingReview(true);
-        try {
-            const response = await axios.post('/api/player-review', {
-                player_name: `${player.first_name} ${player.last_name}`
-            });
-            setPlayerReview(response.data.review);
-        } catch (error) {
-            setPlayerReview('Could not fetch review. Please try again later.');
+        const cachedResponse = localStorage.getItem(player.player_id);
+        if (cachedResponse) {
+            const { review } = JSON.parse(cachedResponse);
+            setPlayerReview(review);
+        } else {
+            setLoadingReview(true);
+            try {
+                const response = await axios.post('/api/player-review', {
+                    player_name: `${player.first_name} ${player.last_name}`,
+                    player_position: player.position,
+                    player_grade: player.grade
+                });
+                const { review } = response.data;
+                setPlayerReview(review);
+
+                localStorage.setItem(player.player_id, JSON.stringify({ review }));
+            } catch (error) {
+                console.error('Error fetching player review:', error);
+                setPlayerReview('Could not fetch review. Please try again later.');
+            }
+            setLoadingReview(false);
         }
-        setLoadingReview(false);
     };
 
     const closeModal = () => {
         setModalIsOpen(false);
         setSelectedPlayer(null);
         setPlayerReview('');
+        setPlayerGrade('');
     };
 
     if (error) return <div>{error}</div>;
     if (!teamData) return <div>Loading...</div>;
 
     return (
-        <div className="team-detail-container">
-            <h2>{teamData.team_name} (Owner: {teamData.owner_name})</h2>
-            <div>
+        <div className="team-container">
+            <h2 className="team-header">{teamData.metadata.team_name || `Team ${teamData.owner_id}`}</h2>
+            <div className="team-grade">Team Grade: {teamGrade}</div>
+            <div className="roster-container">
                 <h3>Roster</h3>
-                <ul>
-                    {teamData.player_details && teamData.player_details.map(player => (
-                        <li key={player.player_id}>
-                            <button onClick={() => openModal(player)}>
-                                {player.first_name} {player.last_name} - {player.position}
-                            </button>
-                        </li>
-                    ))}
-                </ul>
-            </div>
-            <div>
-                <h3>Draft Picks</h3>
-                <ul>
-                    {teamData.draft_picks && teamData.draft_picks.map(pick => (
-                        <li key={`${pick.season}-${pick.round}`}>
-                            Round {pick.round}, Pick {pick.pick_number}
-                        </li>
-                    ))}
-                </ul>
-            </div>
-            <div>
-                <h3>Recent Transactions</h3>
-                <ul>
-                    {transactions.map(transaction => (
-                        <li key={transaction.transaction_id}>
-                            {transaction.type} - {new Date(transaction.status_updated).toLocaleDateString()}
-                        </li>
-                    ))}
-                </ul>
-            </div>
-            {selectedPlayer && (
-                <Modal isOpen={modalIsOpen} onRequestClose={closeModal} className="player-modal" overlayClassName="player-modal-overlay">
-                    <div className="modal-content">
-                        <h2>{selectedPlayer.first_name} {selectedPlayer.last_name}</h2>
-                        <p><img src={`https://sleepercdn.com/avatars/${selectedPlayer.avatar}`} alt={`${selectedPlayer.first_name} ${selectedPlayer.last_name}`} /></p>
-                        <p>Position: {selectedPlayer.position}</p>
-                        <p>Team: {selectedPlayer.team}</p>
-                        <p>College: {selectedPlayer.college}</p>
-                        <p>Height: {selectedPlayer.height}</p>
-                        <p>Weight: {selectedPlayer.weight}</p>
-                        <p>Age: {selectedPlayer.age}</p>
-                        <p>Years of Experience: {selectedPlayer.years_exp}</p>
-                        <p>Status: {selectedPlayer.status}</p>
-                        <p>Injury Status: {selectedPlayer.injury_status}</p>
-                        <h3>Review</h3>
-                        {loadingReview ? <p>Loading review...</p> : <p>{playerReview}</p>}
-                        <button className="modal-close-button" onClick={closeModal}>Close</button>
+                {Object.keys(groupedPlayers).map(position => (
+                    <div key={position} className="position-group">
+                        <h4>{position}</h4>
+                        <ul>
+                            {groupedPlayers[position].map(player => (
+                                <li key={player.player_id}>
+                                    <button onClick={() => openModal(player)}>
+                                        {player.first_name} {player.last_name} - {player.grade}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
                     </div>
-                </Modal>
-            )}
+                ))}
+            </div>
+            <PlayerPopup
+                isOpen={modalIsOpen}
+                onRequestClose={closeModal}
+                selectedPlayer={selectedPlayer}
+                playerReview={playerReview}
+                playerGrade={playerGrade}
+                loadingReview={loadingReview}
+            />
         </div>
     );
 };

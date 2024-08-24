@@ -1,12 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import '../styles/HomePage.css'; 
+import '../styles/HomePage.css';
 
 function HomePage() {
   return (
     <div className="home-container">
-      <h1>Welcome to the Fantasy Football Draft App</h1>
-      <p>Select your league type:</p>
+      <h1 className="home-title">Welcome to the Fantasy Football Draft App</h1>
+      <p className="home-subtitle">Select your league type:</p>
       <div className="button-container">
         <Link to="/dynasty">
           <button className="league-button">

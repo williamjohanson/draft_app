@@ -1,38 +1,71 @@
-.dynasty-container {
+.dynasty-league-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 20px;
-  background-color: #f9f9f9;
-}
-
-.dynasty-container h2 {
-  font-size: 2.5rem;
-  color: #444;
-  margin-bottom: 30px;
-}
-
-.teams-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 20px;
-  width: 100%;
-  max-width: 800px;
-}
-
-.team-button {
-  background-color: #007bff;
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
   color: white;
-  padding: 15px;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  text-align: center;
-  font-size: 1rem;
-  transition: background-color 0.3s ease, transform 0.2s ease;
+  min-height: 100vh;
+  font-family: 'Arial', sans-serif;
 }
 
-.team-button:hover {
-  background-color: #0056b3;
-  transform: translateY(-3px);
+.league-title {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.league-status {
+  font-size: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.teams-header {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+}
+
+.teams-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4 columns */
+  gap: 60px; /* Smaller gap to reduce spacing between boxes */
+  width: 90%; /* Increase the container width to cover more of the page */
+  max-width: 1400px; /* Increase max width to allow more coverage */
+  justify-content: center;
+}
+
+.team-card {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.3s ease, background 0.3s ease;
+  text-align: center;
+  width: 100%;
+  height: 100%;
+  text-decoration: none;
+  color: white;
+}
+
+.team-card:hover {
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.team-info {
+  text-align: center;
+}
+
+.team-name {
+  font-size: 1.4rem;
+  margin-bottom: 10px;
+}
+
+.error-message,
+.no-teams-message {
+  font-size: 1.5rem;
+  margin-top: 50px;
+  text-align: center;
 }

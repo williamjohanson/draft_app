@@ -19,6 +19,8 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Path to store player data locally
 PLAYER_DATA_PATH = './data/players.json'
+# Simple in-memory cache
+review_cache = {}
 
 def fetch_and_store_players():
     """Fetch player data from Sleeper API and store it locally."""
@@ -88,43 +90,39 @@ def get_draft_picks(league_id):
         return jsonify({'error': 'Failed to fetch draft picks'}), response.status_code
     return jsonify({'error': 'Failed to fetch league data'}), league_response.status_code
 
-@app.route('/api/player-review', methods=['POST'])
-def get_player_review():
-    player_name = request.json.get('player_name')
-    player_position = request.json.get('player_position')  # Assuming this is provided in the request
-    team_roster = request.json.get('team_roster')  # Assuming the current roster is provided
+@app.route('/api/player-grade', methods=['POST'])
+def get_player_grade():
+    data = request.json
+    player_name = data.get('player_name')
+    player_position = data.get('player_position')
+    team_roster = data.get('team_roster')
+    season = data.get('season', 2023)  # Default to current season
 
     if not player_name or not player_position or not team_roster:
         return jsonify({'error': 'Player name, position, and team roster are required'}), 400
 
-    try:
-        # Initialize the generator and get parameters
-        generator = CommentatorResponseGenerator()
-        commentator, mood, structure = generator.generate_parameters()
+    # Initialize and calculate grade
+    grade_calculator = CalcPlayerGrade(player_name, player_position, team_roster)
+    grade_calculator.fetch_player_game_log(season)
+    player_grade = grade_calculator.calculate_grade()
 
-        # Calculate player grade based on the team's needs
-        grade_calculator = CalcPlayerGrade(player_name, player_position, team_roster)
-        player_grade = grade_calculator.calculate_grade()
-        grade_text = f"Grade: {player_grade:.2f}/10"
+    return jsonify({'grade': player_grade})
 
-        # Call to OpenAI to generate a concise evaluation
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",  # More cost-effective model
-            messages=[
-                {"role": "system", "content": f"You are {commentator}, known for your {mood} analysis."},
-                {"role": "user", "content": f"Using the following structure: '{structure}', evaluate the football player {player_name} who plays as a {player_position}. Provide a grade based on the team's needs, {grade_text}. Make sure the response is concise and non-humorous."}
-            ],
-            max_tokens=60
-        )
+@app.route('/api/player-review', methods=['POST'])
+def get_player_review():
+    player_name = request.json.get('player_name')
+    player_position = request.json.get('player_position')
+    team_roster = request.json.get('team_roster')
+    player_grade = request.json.get('player_grade')  # Assuming grade is passed to this endpoint
 
-        evaluation = response['choices'][0]['message']['content'].strip()
+    if not player_name or not player_position or not team_roster or not player_grade:
+        return jsonify({'error': 'Player name, position, team roster, and grade are required'}), 400
 
-        # Combine the evaluation with the grade
-        review = f"{evaluation}\n\n{grade_text}"
-        return jsonify({'review': review})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    generator = CommentatorResponseGenerator()
+    review = generator.generate_fantasy_review(player_name, player_position, player_grade, team_roster)
+
+    return jsonify({'review': review, 'grade': f"Grade: {player_grade:.2f}/10"})
 
 if __name__ == '__main__':
     initialize()  # Ensure everything is set up before the server starts
-    app.run(debug=True)
+    app.run(port=5001, debug=True)

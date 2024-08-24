@@ -4,53 +4,48 @@
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background-color: #f0f2f5;
+  background: linear-gradient(135deg, #f3ec78, #af4261);
+  color: white;
   text-align: center;
 }
 
-.home-container h1 {
+.home-title {
   font-size: 3rem;
-  color: #333;
-  margin-bottom: 20px;
+  margin-bottom: 1rem;
+  font-family: 'Arial', sans-serif;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
-.home-container p {
-  font-size: 1.2rem;
-  color: #666;
-  margin-bottom: 40px;
+.home-subtitle {
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .button-container {
   display: flex;
-  gap: 20px;
+  gap: 2rem;
 }
 
 .league-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 15px 30px;
-  font-size: 1.2rem;
+  background: #333;
   color: white;
-  background-color: #007bff;
+  padding: 1rem 2rem;
   border: none;
   border-radius: 10px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
-  text-decoration: none;
-}
-
-.league-button img {
-  width: 40px;
-  height: 40px;
-  margin-right: 10px;
+  font-size: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: background 0.3s ease;
 }
 
 .league-button:hover {
-  background-color: #0056b3;
+  background: #555;
 }
 
 .league-logo {
-  max-height: 40px;
-  max-width: 40px;
+  width: 50px;
+  height: 50px;
 }
+

@@ -1,4 +1,5 @@
 import random
+import openai
 
 class CommentatorResponseGenerator:
     def __init__(self):
@@ -29,3 +30,32 @@ class CommentatorResponseGenerator:
         mood = random.choice(self.moods)
         structure = random.choice(self.response_structures)
         return commentator, mood, structure
+
+    def generate_fantasy_review(self, player_name, player_position, player_grade, team_roster):
+        """Generate a fantasy dynasty perspective review using OpenAI."""
+        commentator, mood, structure = self.generate_parameters()
+
+        # Construct a message content for OpenAI API
+        messages = [
+            {"role": "system", "content": f"You are {commentator}, known for your {mood} analysis."},
+            {
+                "role": "user", 
+                "content": (
+                    f"From a fantasy dynasty perspective, evaluate the football player {player_name}, who plays as a {player_position}. "
+                    f"The player has received a grade of {player_grade:.2f}/10 based on the team's needs. "
+                    f"Consider the rest of the team roster: {[player['player_name'] + ' (' + player['player_position'] + ')' for player in team_roster]}. "
+                    f"Provide a review using the following structure: '{structure}'."
+                )
+            }
+        ]
+
+        try:
+            response = openai.ChatCompletion.create(
+                model="gpt-3.5-turbo",
+                messages=messages,
+                max_tokens=50  # Adjust as needed
+            )
+            review = response['choices'][0]['message']['content'].strip()
+            return review
+        except Exception as e:
+            return f"Error generating review: {str(e)}"
