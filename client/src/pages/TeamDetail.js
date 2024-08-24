@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import PlayerPopup from './PlayerPopup';  
+import PlayerPopup from './PlayerPopup';
 import '../styles/TeamDetail.css';
 
 const TeamDetail = () => {
@@ -10,16 +10,18 @@ const TeamDetail = () => {
     const [groupedPlayers, setGroupedPlayers] = useState({});
     const [selectedPlayer, setSelectedPlayer] = useState(null);
     const [modalIsOpen, setModalIsOpen] = useState(false);
-    const [playerReview, setPlayerReview] = useState('');
-    const [playerGrade, setPlayerGrade] = useState('');
-    const [teamGrade, setTeamGrade] = useState('');
-    const [loadingReview, setLoadingReview] = useState(false);
-    const [loadingGrades, setLoadingGrades] = useState(true);
+    const [suggestedPicks, setSuggestedPicks] = useState([]);
+    const [loadingSuggestions, setLoadingSuggestions] = useState(false);
     const [error, setError] = useState(null);
+    const [userData, setUserData] = useState(null);
+    const [playerReview, setPlayerReview] = useState(null);
+    const [playerGrade, setPlayerGrade] = useState(null);
+    const [loadingReview, setLoadingReview] = useState(false);
 
     useEffect(() => {
-        async function fetchTeamData() {
+        async function fetchData() {
             try {
+                // Fetch team data
                 const rostersResponse = await axios.get(`/api/league/1048178119665889280/rosters`);
                 const team = rostersResponse.data.find(t => t.owner_id.toString() === teamId);
                 if (!team) {
@@ -27,18 +29,22 @@ const TeamDetail = () => {
                 }
                 setTeamData(team);
                 groupPlayersByPosition(team.player_details);
-                await calculatePlayerGrades(team.player_details);
+
+                // Fetch user data
+                const usersResponse = await axios.get(`/api/league/1048178119665889280/users`);
+                const user = usersResponse.data.find(u => u.user_id.toString() === team.owner_id.toString());
+                setUserData(user);
             } catch (error) {
-                console.error('Error fetching team data:', error);
+                console.error('Error fetching data:', error);
                 setError('Failed to load team data. Please try again later.');
             }
         }
 
-        fetchTeamData();
+        fetchData();
     }, [teamId]);
 
     const groupPlayersByPosition = (players) => {
-        const positions = { QB: [], RB: [], WR: [], TE: [] };
+        const positions = { QB: [], RB: [], WR: [], TE: [], K: [] };
         players.forEach(player => {
             if (positions[player.position]) {
                 positions[player.position].push(player);
@@ -47,88 +53,66 @@ const TeamDetail = () => {
         setGroupedPlayers(positions);
     };
 
-    const calculatePlayerGrades = async (players) => {
+    const determineNextPick = async () => {
+        setLoadingSuggestions(true);
         try {
-            const response = await axios.post('/api/player-grades', {
-                team_roster: players
+            const response = await axios.post('/api/next-pick', {
+                team_roster: teamData.player_details
             });
-
-            const grades = response.data.grades;
-
-            // Map grades to players
-            players.forEach(player => {
-                const playerGrade = grades.find(g => g.player_id === player.player_id);
-                player.grade = playerGrade ? playerGrade.grade : 'N/A';
-            });
-
-            // Calculate team grade (simple average for demonstration)
-            const teamGrade = grades.reduce((sum, grade) => sum + parseFloat(grade.grade), 0) / grades.length;
-            setTeamGrade(teamGrade.toFixed(2));
-            setLoadingGrades(false);
+            setSuggestedPicks(response.data.suggestions);
         } catch (error) {
-            console.error('Error calculating player grades:', error);
-            setLoadingGrades(false);
+            console.error('Error determining next pick:', error);
+            setError('Failed to determine next pick. Please try again later.');
         }
+        setLoadingSuggestions(false);
     };
 
-    const openModal = async (player) => {
+    const openModal = (player) => {
         setSelectedPlayer(player);
         setModalIsOpen(true);
-
-        const cachedResponse = localStorage.getItem(player.player_id);
-        if (cachedResponse) {
-            const { review } = JSON.parse(cachedResponse);
-            setPlayerReview(review);
-        } else {
-            setLoadingReview(true);
-            try {
-                const response = await axios.post('/api/player-review', {
-                    player_name: `${player.first_name} ${player.last_name}`,
-                    player_position: player.position,
-                    player_grade: player.grade
-                });
-                const { review } = response.data;
-                setPlayerReview(review);
-
-                localStorage.setItem(player.player_id, JSON.stringify({ review }));
-            } catch (error) {
-                console.error('Error fetching player review:', error);
-                setPlayerReview('Could not fetch review. Please try again later.');
-            }
-            setLoadingReview(false);
-        }
     };
 
     const closeModal = () => {
         setModalIsOpen(false);
         setSelectedPlayer(null);
-        setPlayerReview('');
-        setPlayerGrade('');
     };
 
     if (error) return <div>{error}</div>;
-    if (!teamData || loadingGrades) return <div>Loading...</div>;
+    if (!teamData || !userData) return <div>Loading...</div>;
+
+    // Display the correct team name or user display name
+    const teamName = teamData.metadata?.team_name || userData.display_name || `Team ${teamData.owner_id}`;
 
     return (
         <div className="team-container">
-            <h2 className="team-header">{teamData.metadata.team_name || `Team ${teamData.owner_id}`}</h2>
-            <div className="team-grade">Team Grade: {teamGrade}</div>
+            <h2 className="team-header">{teamName}</h2>
             <div className="roster-container">
                 <h3>Roster</h3>
-                {Object.keys(groupedPlayers).map(position => (
+                {Object.keys(groupedPlayers).map((position) => (
                     <div key={position} className="position-group">
                         <h4>{position}</h4>
                         <ul>
-                            {groupedPlayers[position].map(player => (
+                            {groupedPlayers[position].map((player) => (
                                 <li key={player.player_id}>
                                     <button onClick={() => openModal(player)}>
-                                        {player.first_name} {player.last_name} - {player.grade}
+                                        {player.first_name} {player.last_name}
                                     </button>
                                 </li>
                             ))}
                         </ul>
                     </div>
                 ))}
+            </div>
+            <button onClick={determineNextPick}>Determine Next Pick</button>
+            <div className="suggested-picks">
+                <h3>Suggested Picks</h3>
+                <ul>
+                    {suggestedPicks.map((suggestion, index) => (
+                        <li key={index}>
+                            <strong>{suggestion.name}</strong> - Grade: {suggestion.grade}
+                        </li>
+                    ))}
+                </ul>
             </div>
             <PlayerPopup
                 isOpen={modalIsOpen}
